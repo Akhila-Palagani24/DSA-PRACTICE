@@ -1,0 +1,182 @@
+import java.util.*;
+
+class Solution {
+    static class Fenwick {
+        int n;
+        int[] bit;
+
+        Fenwick(int n) {
+            this.n = n;
+            bit = new int[n + 1];
+        }
+
+        void add(int idx, int delta) {
+            idx++;
+            while (idx <= n) {
+                bit[idx] += delta;
+                idx += idx & -idx;
+            }
+        }
+
+        int sum(int idx) {
+            idx++;
+            int res = 0;
+            while (idx > 0) {
+                res += bit[idx];
+                idx -= idx & -idx;
+            }
+            return res;
+        }
+
+        int kth(int k) {
+            int idx = 0;
+            int bitMask = Integer.highestOneBit(n);
+
+            while (bitMask != 0) {
+                int next = idx + bitMask;
+                if (next <= n && bit[next] < k) {
+                    k -= bit[next];
+                    idx = next;
+                }
+                bitMask >>= 1;
+            }
+            return idx;
+        }
+    }
+
+    static class SegmentTree {
+        int[] seg;
+        int n;
+
+        SegmentTree(int n) {
+            this.n = n;
+            seg = new int[4 * n];
+        }
+
+        void update(int node, int l, int r, int pos, int val) {
+            if (l == r) {
+                seg[node] = val;
+                return;
+            }
+
+            int mid = (l + r) >> 1;
+
+            if (pos <= mid)
+                update(node * 2, l, mid, pos, val);
+            else
+                update(node * 2 + 1, mid + 1, r, pos, val);
+
+            seg[node] = Math.max(seg[node * 2], seg[node * 2 + 1]);
+        }
+
+        int query(int node, int l, int r, int ql, int qr) {
+            if (ql > r || qr < l) return 0;
+
+            if (ql <= l && r <= qr) return seg[node];
+
+            int mid = (l + r) >> 1;
+
+            return Math.max(
+                query(node * 2, l, mid, ql, qr),
+                query(node * 2 + 1, mid + 1, r, ql, qr)
+            );
+        }
+    }
+
+    public List<Boolean> getResults(int[][] queries) {
+        int MAXX = 50000;
+
+        HashSet<Integer> obstacles = new HashSet<>();
+
+        for (int[] q : queries) {
+            if (q[0] == 1) {
+                obstacles.add(q[1]);
+            }
+        }
+
+        boolean[] active = new boolean[MAXX + 1];
+        active[0] = true;
+        active[MAXX] = true;
+
+        for (int x : obstacles) {
+            active[x] = true;
+        }
+
+        int[] prev = new int[MAXX + 1];
+        int[] next = new int[MAXX + 1];
+
+        Arrays.fill(prev, -1);
+        Arrays.fill(next, -1);
+
+        ArrayList<Integer> pts = new ArrayList<>();
+
+        for (int i = 0; i <= MAXX; i++) {
+            if (active[i]) pts.add(i);
+        }
+
+        for (int i = 0; i < pts.size(); i++) {
+            int p = pts.get(i);
+
+            if (i > 0) prev[p] = pts.get(i - 1);
+            if (i + 1 < pts.size()) next[p] = pts.get(i + 1);
+        }
+
+        Fenwick bit = new Fenwick(MAXX + 1);
+
+        for (int p : pts) {
+            bit.add(p, 1);
+        }
+
+        SegmentTree seg = new SegmentTree(MAXX + 1);
+
+        for (int i = 1; i < pts.size(); i++) {
+            int a = pts.get(i - 1);
+            int b = pts.get(i);
+
+            seg.update(1, 0, MAXX, b, b - a);
+        }
+
+        ArrayList<Boolean> ans = new ArrayList<>();
+
+        for (int i = queries.length - 1; i >= 0; i--) {
+            int[] q = queries[i];
+
+            if (q[0] == 2) {
+                int x = q[1];
+                int sz = q[2];
+
+                int cnt = bit.sum(x);
+                int p = bit.kth(cnt);
+
+                int best = Math.max(
+                    seg.query(1, 0, MAXX, 0, x),
+                    x - p
+                );
+
+                ans.add(best >= sz);
+            } else {
+                int x = q[1];
+
+                int l = prev[x];
+                int r = next[x];
+
+                seg.update(1, 0, MAXX, x, 0);
+
+                if (r != -1) {
+                    seg.update(1, 0, MAXX, r, r - l);
+                }
+
+                next[l] = r;
+
+                if (r != -1) {
+                    prev[r] = l;
+                }
+
+                bit.add(x, -1);
+            }
+        }
+
+        Collections.reverse(ans);
+        return ans;
+    }
+}
