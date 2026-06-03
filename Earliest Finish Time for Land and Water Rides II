@@ -1,0 +1,81 @@
+class Solution {
+
+    public int earliestFinishTime(int[] landStartTime, int[] landDuration,
+                                  int[] waterStartTime, int[] waterDuration) {
+
+        long ans = Long.MAX_VALUE;
+
+        Helper waterHelper = new Helper(waterStartTime, waterDuration);
+        Helper landHelper = new Helper(landStartTime, landDuration);
+
+        int n = landStartTime.length;
+        for (int i = 0; i < n; i++) {
+            int finishLand = landStartTime[i] + landDuration[i];
+            ans = Math.min(ans, waterHelper.query(finishLand));
+        }
+
+        int m = waterStartTime.length;
+        for (int i = 0; i < m; i++) {
+            int finishWater = waterStartTime[i] + waterDuration[i];
+            ans = Math.min(ans, landHelper.query(finishWater));
+        }
+
+        return (int) ans;
+    }
+
+    static class Helper {
+        static final int MAX = 100000;
+        static final int INF = 1_000_000_000;
+
+        int[] prefixMinDur = new int[MAX + 2];
+        int[] suffixMinFinish = new int[MAX + 3];
+
+        Helper(int[] start, int[] dur) {
+
+            int[] minDurAt = new int[MAX + 2];
+            int[] minFinishAt = new int[MAX + 2];
+
+            java.util.Arrays.fill(minDurAt, INF);
+            java.util.Arrays.fill(minFinishAt, INF);
+            java.util.Arrays.fill(prefixMinDur, INF);
+            java.util.Arrays.fill(suffixMinFinish, INF);
+
+            for (int i = 0; i < start.length; i++) {
+                minDurAt[start[i]] =
+                        Math.min(minDurAt[start[i]], dur[i]);
+
+                minFinishAt[start[i]] =
+                        Math.min(minFinishAt[start[i]],
+                                 start[i] + dur[i]);
+            }
+
+            for (int t = 1; t <= MAX; t++) {
+                prefixMinDur[t] =
+                        Math.min(prefixMinDur[t - 1], minDurAt[t]);
+            }
+
+            for (int t = MAX; t >= 1; t--) {
+                suffixMinFinish[t] =
+                        Math.min(suffixMinFinish[t + 1], minFinishAt[t]);
+            }
+        }
+
+        long query(int t) {
+            long res = Long.MAX_VALUE;
+
+            int capped = Math.min(t, MAX);
+
+            if (prefixMinDur[capped] < INF) {
+                res = Math.min(res,
+                        (long) t + prefixMinDur[capped]);
+            }
+
+            if (t < MAX && suffixMinFinish[t + 1] < INF) {
+                res = Math.min(res,
+                        (long) suffixMinFinish[t + 1]);
+            }
+
+            return res;
+        }
+    }
+}
