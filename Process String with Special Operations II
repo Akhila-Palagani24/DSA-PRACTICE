@@ -1,0 +1,53 @@
+class Solution {
+    public char processStr(String s, long k) {
+        int n = s.length();
+        final long INF = 2_000_000_000_000_000L; // safe cap, well above max k (1e15)
+        long[] length = new long[n];
+        long len = 0;
+
+        // Forward pass: track length of result after each operation
+        for (int i = 0; i < n; i++) {
+            char c = s.charAt(i);
+            if (c == '*') {
+                if (len > 0) len--;
+            } else if (c == '#') {
+                len = len * 2;
+                if (len > INF) len = INF;
+            } else if (c == '%') {
+                // length unchanged
+            } else {
+                len++; // append letter
+            }
+            length[i] = len;
+        }
+
+        if (k >= length[n - 1]) return '.';
+
+        // Backward pass: trace which operation produced index k
+        for (int i = n - 1; i >= 0; i--) {
+            char c = s.charAt(i);
+            long lenAfter = length[i];
+            long lenBefore = (i == 0) ? 0 : length[i - 1];
+
+            if (c == '*') {
+                // k unchanged, just move to previous state
+            } else if (c == '#') {
+                if (k < lenBefore) {
+                    // same position as before duplication
+                } else {
+                    k -= lenBefore;
+                }
+            } else if (c == '%') {
+                k = lenAfter - 1 - k;
+            } else {
+                // letter appended
+                if (k == lenAfter - 1) {
+                    return c;
+                }
+                // else unchanged, refers to same position before this append
+            }
+        }
+
+        return '.'; // unreachable given the bounds check above
+    }
+}
