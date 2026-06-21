@@ -1,0 +1,14 @@
+class Solution {
+    public int maxIceCream(int[] costs, int coins) {
+        int[] count = new int[100001];
+        for (int cost : costs) count[cost]++;
+        
+        int bars = 0;
+        for (int price = 1; price <= 100000 && coins >= price; price++) {
+            int canBuy = Math.min(count[price], coins / price);
+            bars += canBuy;
+            coins -= canBuy * price;
+        }
+        return bars;
+    }
+}
