@@ -1,0 +1,46 @@
+class Solution {
+    public boolean findSafeWalk(List<List<Integer>> grid, int health) {
+        int m = grid.size();
+        int n = grid.get(0).size();
+
+        int[][] minLoss = new int[m][n];
+        for (int[] row : minLoss) {
+            Arrays.fill(row, Integer.MAX_VALUE);
+        }
+
+        int startCost = grid.get(0).get(0);
+        minLoss[0][0] = startCost;
+
+        Deque<int[]> deque = new ArrayDeque<>();
+        deque.offerFirst(new int[]{0, 0});
+
+        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+        while (!deque.isEmpty()) {
+            int[] cell = deque.pollFirst();
+            int row = cell[0], col = cell[1];
+            int currentLoss = minLoss[row][col];
+
+            for (int[] dir : directions) {
+                int nr = row + dir[0];
+                int nc = col + dir[1];
+
+                if (nr < 0 || nr >= m || nc < 0 || nc >= n) continue;
+
+                int edgeCost = grid.get(nr).get(nc);
+                int newLoss = currentLoss + edgeCost;
+
+                if (newLoss < minLoss[nr][nc]) {
+                    minLoss[nr][nc] = newLoss;
+                    if (edgeCost == 0) {
+                        deque.offerFirst(new int[]{nr, nc});
+                    } else {
+                        deque.offerLast(new int[]{nr, nc});
+                    }
+                }
+            }
+        }
+
+        return minLoss[m - 1][n - 1] < health;
+    }
+}
