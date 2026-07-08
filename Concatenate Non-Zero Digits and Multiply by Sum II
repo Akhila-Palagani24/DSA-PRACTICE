@@ -1,0 +1,70 @@
+class Solution {
+    public int[] sumAndMultiply(String s, int[][] queries) {
+        final long MOD = 1_000_000_007L;
+
+        int n = s.length();
+
+        // Count non-zero digits
+        int total = 0;
+        for (int i = 0; i < n; i++) {
+            if (s.charAt(i) != '0')
+                total++;
+        }
+
+        long[] pow10 = new long[total + 1];
+        pow10[0] = 1;
+        for (int i = 1; i <= total; i++) {
+            pow10[i] = (pow10[i - 1] * 10) % MOD;
+        }
+
+        int[] countPrefix = new int[n + 1];
+        long[] hashPrefix = new long[total + 1];
+        long[] sumPrefix = new long[total + 1];
+
+        int idx = 0;
+
+        for (int i = 0; i < n; i++) {
+            countPrefix[i + 1] = countPrefix[i];
+
+            char ch = s.charAt(i);
+
+            if (ch != '0') {
+                idx++;
+                int digit = ch - '0';
+
+                countPrefix[i + 1]++;
+
+                hashPrefix[idx] = (hashPrefix[idx - 1] * 10 + digit) % MOD;
+                sumPrefix[idx] = sumPrefix[idx - 1] + digit;
+            }
+        }
+
+        int[] ans = new int[queries.length];
+
+        for (int i = 0; i < queries.length; i++) {
+
+            int l = queries[i][0];
+            int r = queries[i][1];
+
+            int left = countPrefix[l];
+            int right = countPrefix[r + 1];
+
+            int len = right - left;
+
+            if (len == 0) {
+                ans[i] = 0;
+                continue;
+            }
+
+            long x = (hashPrefix[right]
+                    - (hashPrefix[left] * pow10[len]) % MOD
+                    + MOD) % MOD;
+
+            long sum = sumPrefix[right] - sumPrefix[left];
+
+            ans[i] = (int) ((x * sum) % MOD);
+        }
+
+        return ans;
+    }
+}
